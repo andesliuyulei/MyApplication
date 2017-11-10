@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.yuleil01.myapplication">
 
+
     <uses-permission android:name="android.permission.NFC" />
     <uses-feature
         android:name="android.hardware.nfc"
@@ -21,7 +22,7 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.nfc.action.TECH_DISCOVERED" />
-                <!--category android:name="android.intent.category.DEFAULT" /-->
+                <category android:name="android.intent.category.DEFAULT" />
                 <!--data android:mimeType="text/plain" /-->
             </intent-filter>
             <meta-data

@@ -3,8 +3,11 @@ package com.example.yuleil01.myapplication;
 import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -20,7 +23,13 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Calendar;
 
@@ -46,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "This device doesn't support NFC.", Toast.LENGTH_LONG).show();
             finish();
             return;
-
         }
 
         if (!mNfcAdapter.isEnabled()) {
@@ -55,7 +63,10 @@ public class MainActivity extends AppCompatActivity {
             mTextView.setText(R.string.explanation);
         }
 
-        handleIntent(getIntent());
+        //handleIntent(getIntent());
+        int ver = getVersionCode(this);
+        String vname = getVersionName(this);
+        mTextView.setText("i'm here. (" + downloadText() + ") where am i.");
     }
 
     @Override
@@ -88,7 +99,10 @@ public class MainActivity extends AppCompatActivity {
          *
          * In our case this method gets called, when the user attaches a Tag to the device.
          */
-        handleIntent(intent);
+        //handleIntent(intent);
+
+        mTextView.setText("i found u.");
+        mTextView.refreshDrawableState();
     }
 
     private void handleIntent(Intent intent) {
@@ -117,6 +131,12 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 }
             }
+        } else {
+            mTextView.setText(
+                    "action: " + action.toString() +
+                    "\n: " + NfcAdapter.ACTION_NDEF_DISCOVERED.toString() +
+                    "\n: " + NfcAdapter.ACTION_TECH_DISCOVERED.toString()
+            );
         }
     }
     /**
@@ -219,5 +239,79 @@ public class MainActivity extends AppCompatActivity {
      */
     public static void stopForegroundDispatch(final Activity activity, NfcAdapter adapter) {
         adapter.disableForegroundDispatch(activity);
+    }
+
+    public static int getVersionCode(Context context) {
+        PackageManager pm = context.getPackageManager();
+        try {
+            PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
+            return pi.versionCode;
+        } catch (PackageManager.NameNotFoundException ex) {}
+        return 0;
+    }
+
+    public static String getVersionName(Context context) {
+        PackageManager pm = context.getPackageManager();
+        try {
+            PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
+            return pi.versionName;
+        } catch (PackageManager.NameNotFoundException ex) {}
+        return null;
+    }
+
+    private String downloadText() {
+        int BUFFER_SIZE = 2000;
+        InputStream in = null;
+        try {
+            in = openHttpConnection();
+        } catch (IOException e1) {
+            return e1.toString();
+        }
+
+        String str = "";
+        if (in != null) {
+            InputStreamReader isr = new InputStreamReader(in);
+            int charRead;
+            char[] inputBuffer = new char[BUFFER_SIZE];
+            try {
+                while ((charRead = isr.read(inputBuffer)) > 0) {
+                    // ---convert the chars to a String---
+                    String readString = String.copyValueOf(inputBuffer, 0, charRead);
+                    str += readString;
+                    inputBuffer = new char[BUFFER_SIZE];
+                }
+                in.close();
+            } catch (IOException e) {
+                return "";
+            }
+        }
+        return str;
+    }
+
+    private InputStream openHttpConnection() throws IOException {
+        InputStream in = null;
+        int response = -1;
+
+        URL url = new URL("https://drive.google.com/uc?export=download&id=1cSuOyu3lo0Vu5rTBWb1QDogXfIxlM-GG");
+        URLConnection conn = url.openConnection();
+
+        if (!(conn instanceof HttpURLConnection))
+            throw new IOException("Not an HTTP connection");
+
+        try {
+            HttpURLConnection httpConn = (HttpURLConnection) conn;
+            httpConn.setAllowUserInteraction(false);
+            httpConn.setInstanceFollowRedirects(true);
+            httpConn.setRequestMethod("GET");
+            httpConn.connect();
+
+            response = httpConn.getResponseCode();
+            if (response == HttpURLConnection.HTTP_OK) {
+                in = httpConn.getInputStream();
+            }
+        } catch (Exception ex) {
+            throw new IOException("Error connecting");
+        }
+        return in;
     }
 }
