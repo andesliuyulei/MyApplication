@@ -1,6 +1,7 @@
 package com.example.yuleil01.myapplication;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -38,7 +39,12 @@ public class MainActivity extends AppCompatActivity {
     private TextView mTextView;
     private NfcAdapter mNfcAdapter;
 
-    private static String debugMsg = "initial";
+    //private static String debugMsg = "initial";
+    private AlertDialog autoUpdate;
+    private int currentAppVerCode;
+    private int latestAppVerCode;
+    private String currentAppVerName;
+    private String latestAppVerName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,8 +69,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //handleIntent(getIntent());
-        int ver = getVersionCode(this);
-        String vname = getVersionName(this);
+        currentAppVerCode = getVersionCode(this);
+        currentAppVerName = getVersionName(this);
         //mTextView.setText("i'm here. (" + downloadText() + ") where am i. debugMsg: " + debugMsg);
         new MyDownloadTask().execute();
     }
@@ -241,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.disableForegroundDispatch(activity);
     }
 
-    public static int getVersionCode(Context context) {
+    private static int getVersionCode(Context context) {
         PackageManager pm = context.getPackageManager();
         try {
             PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
@@ -250,44 +256,13 @@ public class MainActivity extends AppCompatActivity {
         return 0;
     }
 
-    public static String getVersionName(Context context) {
+    private static String getVersionName(Context context) {
         PackageManager pm = context.getPackageManager();
         try {
             PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
             return pi.versionName;
         } catch (PackageManager.NameNotFoundException ex) {}
         return null;
-    }
-
-    private String downloadText() {
-        int BUFFER_SIZE = 2000;
-        InputStream in = null;
-        try {
-            in = openHttpConnection();
-            //in = tryItOut();
-            //new MyDownloadTask().execute();
-        } catch (IOException e1) {
-            return e1.toString();
-        }
-
-        String str = "";
-        if (in != null) {
-            InputStreamReader isr = new InputStreamReader(in);
-            int charRead;
-            char[] inputBuffer = new char[BUFFER_SIZE];
-            try {
-                while ((charRead = isr.read(inputBuffer)) > 0) {
-                    // ---convert the chars to a String---
-                    String readString = String.copyValueOf(inputBuffer, 0, charRead);
-                    str += readString;
-                    inputBuffer = new char[BUFFER_SIZE];
-                }
-                in.close();
-            } catch (IOException e) {
-                return "";
-            }
-        }
-        return str;
     }
 
     private InputStream openHttpConnection() throws IOException {
@@ -297,43 +272,24 @@ public class MainActivity extends AppCompatActivity {
         URL url = new URL("https://raw.githubusercontent.com/andesliuyulei/MyApplication/master/app/src/main/res/versioninfo.txt");
         URLConnection conn = url.openConnection();
 
-        if (!(conn instanceof HttpURLConnection))
+        if (!(conn instanceof HttpURLConnection)) {
             throw new IOException("Not an HTTP connection");
-
+        }
         try {
             HttpURLConnection httpConn = (HttpURLConnection) conn;
             httpConn.setAllowUserInteraction(false);
             httpConn.setInstanceFollowRedirects(true);
             httpConn.setRequestMethod("GET");
-            debugMsg = "debug to here already 1";
             httpConn.connect();
-            //httpConn.getContentLength();
-            //in = httpConn.getInputStream();
-            debugMsg = "debug to here already 2";
 
             response = httpConn.getResponseCode();
             if (response == HttpURLConnection.HTTP_OK) {
                 in = httpConn.getInputStream();
             }
         } catch (Exception ex) {
-            throw new IOException("Error connecting" +ex.toString());
-            //return in;
-        }//*/
-        return in;
-    }
-
-    private InputStream tryItOut() throws IOException {
-        URL url = new URL("https://raw.githubusercontent.com/andesliuyulei/MyApplication/master/app/src/main/res/versioninfo.txt");
-        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-        try {
-            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-            return in;
-            //readStream(in);
-        } catch (Exception e) {
-            throw new IOException("alama");
-        } finally {
-            urlConnection.disconnect();
+            throw new IOException("Error connecting");
         }
+        return in;
     }
 
     private class MyDownloadTask extends AsyncTask<Void,Void,InputStream> {
@@ -367,11 +323,15 @@ public class MainActivity extends AppCompatActivity {
                     }
                     in.close();
                 } catch (IOException e) {
-                    //return "";
+                    e.printStackTrace();
                 }
             }
-            //return str;
-            mTextView.setText("i'm here. () where am i. debugMsg: " + str);
+            String[] versioninfo = str.split(":");
+            latestAppVerCode = Integer.parseInt(versioninfo[0]);
+            latestAppVerName = versioninfo[1];
+            if (latestAppVerCode > currentAppVerCode) {
+                autoUpdate.show();
+            }
         }
     }
 }
