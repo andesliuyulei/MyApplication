@@ -1,7 +1,6 @@
 package com.example.yuleil01.myapplication;
 
 import android.app.Activity;
-import android.app.DatePickerDialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -17,12 +16,10 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.widget.DatePicker;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,7 +28,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
-import java.util.Calendar;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -68,7 +65,8 @@ public class MainActivity extends AppCompatActivity {
         //handleIntent(getIntent());
         int ver = getVersionCode(this);
         String vname = getVersionName(this);
-        mTextView.setText("i'm here. (" + downloadText() + ") where am i. debugMsg: " + debugMsg);
+        //mTextView.setText("i'm here. (" + downloadText() + ") where am i. debugMsg: " + debugMsg);
+        new MyDownloadTask().execute();
     }
 
     @Override
@@ -266,6 +264,8 @@ public class MainActivity extends AppCompatActivity {
         InputStream in = null;
         try {
             in = openHttpConnection();
+            //in = tryItOut();
+            //new MyDownloadTask().execute();
         } catch (IOException e1) {
             return e1.toString();
         }
@@ -294,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
         InputStream in = null;
         int response = -1;
 
-        URL url = new URL("https://www.dropbox.com/s/i63ugyjy2tro8os/versioninfo.txt?dl=0");
+        URL url = new URL("https://raw.githubusercontent.com/andesliuyulei/MyApplication/master/app/src/main/res/versioninfo.txt");
         URLConnection conn = url.openConnection();
 
         if (!(conn instanceof HttpURLConnection))
@@ -307,6 +307,8 @@ public class MainActivity extends AppCompatActivity {
             httpConn.setRequestMethod("GET");
             debugMsg = "debug to here already 1";
             httpConn.connect();
+            //httpConn.getContentLength();
+            //in = httpConn.getInputStream();
             debugMsg = "debug to here already 2";
 
             response = httpConn.getResponseCode();
@@ -314,9 +316,62 @@ public class MainActivity extends AppCompatActivity {
                 in = httpConn.getInputStream();
             }
         } catch (Exception ex) {
-            throw new IOException("Error connecting");
+            throw new IOException("Error connecting" +ex.toString());
             //return in;
         }//*/
         return in;
+    }
+
+    private InputStream tryItOut() throws IOException {
+        URL url = new URL("https://raw.githubusercontent.com/andesliuyulei/MyApplication/master/app/src/main/res/versioninfo.txt");
+        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        try {
+            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+            return in;
+            //readStream(in);
+        } catch (Exception e) {
+            throw new IOException("alama");
+        } finally {
+            urlConnection.disconnect();
+        }
+    }
+
+    private class MyDownloadTask extends AsyncTask<Void,Void,InputStream> {
+        protected void onPreExecute() {
+            //display progress dialog.
+        }
+
+        protected InputStream doInBackground(Void... params) {
+            try {
+                return openHttpConnection();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        protected void onPostExecute(InputStream in) {
+            //dismiss progress dialog and update ui
+            int BUFFER_SIZE = 2000;
+            String str = "";
+            if (in != null) {
+                InputStreamReader isr = new InputStreamReader(in);
+                int charRead;
+                char[] inputBuffer = new char[BUFFER_SIZE];
+                try {
+                    while ((charRead = isr.read(inputBuffer)) > 0) {
+                        // ---convert the chars to a String---
+                        String readString = String.copyValueOf(inputBuffer, 0, charRead);
+                        str += readString;
+                        inputBuffer = new char[BUFFER_SIZE];
+                    }
+                    in.close();
+                } catch (IOException e) {
+                    //return "";
+                }
+            }
+            //return str;
+            mTextView.setText("i'm here. () where am i. debugMsg: " + str);
+        }
     }
 }
