@@ -41,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView mTextView;
     private NfcAdapter mNfcAdapter;
 
+    private static String debugMsg = "initial";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
         //handleIntent(getIntent());
         int ver = getVersionCode(this);
         String vname = getVersionName(this);
-        mTextView.setText("i'm here. (" + downloadText() + ") where am i.");
+        mTextView.setText("i'm here. (" + downloadText() + ") where am i. debugMsg: " + debugMsg);
     }
 
     @Override
@@ -292,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
         InputStream in = null;
         int response = -1;
 
-        URL url = new URL("https://drive.google.com/uc?export=download&id=1cSuOyu3lo0Vu5rTBWb1QDogXfIxlM-GG");
+        URL url = new URL("https://www.dropbox.com/s/i63ugyjy2tro8os/versioninfo.txt?dl=0");
         URLConnection conn = url.openConnection();
 
         if (!(conn instanceof HttpURLConnection))
@@ -303,7 +305,9 @@ public class MainActivity extends AppCompatActivity {
             httpConn.setAllowUserInteraction(false);
             httpConn.setInstanceFollowRedirects(true);
             httpConn.setRequestMethod("GET");
+            debugMsg = "debug to here already 1";
             httpConn.connect();
+            debugMsg = "debug to here already 2";
 
             response = httpConn.getResponseCode();
             if (response == HttpURLConnection.HTTP_OK) {
@@ -311,7 +315,8 @@ public class MainActivity extends AppCompatActivity {
             }
         } catch (Exception ex) {
             throw new IOException("Error connecting");
-        }
+            //return in;
+        }//*/
         return in;
     }
 }
