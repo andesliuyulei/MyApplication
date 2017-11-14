@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
@@ -269,7 +270,9 @@ public class MainActivity extends AppCompatActivity {
         InputStream in = null;
         int response = -1;
 
-        URL url = new URL("https://raw.githubusercontent.com/andesliuyulei/MyApplication/master/app/src/main/res/versioninfo.txt");
+        //String httpsAddr = "https://drive.google.com/file/d/1cSuOyu3lo0Vu5rTBWb1QDogXfIxlM-GG/view";
+        String httpsAddr = "https://raw.githubusercontent.com/andesliuyulei/MyApplication/master/app/src/main/res/versioninfo.txt";
+        URL url = new URL(httpsAddr);
         URLConnection conn = url.openConnection();
 
         if (!(conn instanceof HttpURLConnection)) {
@@ -330,9 +333,12 @@ public class MainActivity extends AppCompatActivity {
             latestAppVerCode = Integer.parseInt(versioninfo[0]);
             latestAppVerName = versioninfo[1];
             if (latestAppVerCode > currentAppVerCode) {
-                autoUpdate.show();
+                //autoUpdate.show();
+                Intent updateIntent = new Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://drive.google.com/open?id=1kGp0H5vYtVKCS6VZHpWdhaYrG3928eoQ"));
+                //startActivity(updateIntent);
             }
-            mTextView.setText("current version code: " + currentAppVerCode +
+            mTextView.setText("AAA current version code: " + currentAppVerCode +
                     "\ncurrent version name: " + currentAppVerName +
                     "\nlatest version code: " + latestAppVerCode +
                     "\nlatest version name: " + latestAppVerName);

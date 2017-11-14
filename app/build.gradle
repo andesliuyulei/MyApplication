@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+def apkPath = "C:\\Users\\yuleil01\\AndroidStudioProjects\\MyApplication\\app\\src\\main\\res\\"
+def apkName = "MyApplication.apk"
+def archiveBuildTypes = ["release", "debug"]
+
 android {
     compileSdkVersion 26
     buildToolsVersion '26.0.2'
@@ -27,6 +31,47 @@ android {
             path "CMakeLists.txt"
         }
     }
+    /*/
+    applicationVariants.all { variant ->
+        variant.outputFile = file(apkPath.concat(apkName))
+    }//*/
+    /*/
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            output.outputFile = new File(apkPath, output.outputFile.name)
+        }
+    }//*/
+    /*/
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            if (variant.buildType.name in archiveBuildTypes) {
+                // Update output filename
+                if (variant.versionName != null) {
+                    String name = "MY_APP-${variant.versionName}-${output.baseName}.apk"
+                    output.outputFile = new File(output.outputFile.parent, name)
+                }
+                // Move output into DIST_DIRECTORY
+                def taskSuffix = variant.name.capitalize()
+                def assembleTaskName = "assemble${taskSuffix}"
+                if (tasks.findByName(assembleTaskName)) {
+                    def copyAPKTask = tasks.create(name: "archive${taskSuffix}", type: org.gradle.api.tasks.Copy) {
+                        description "Archive/copy APK and mappings.txt to a versioned folder."
+                        print "Copying APK&mappings.txt from: ${buildDir}\n"
+                        from("${buildDir}") {
+                            include "../mapping/${variant.buildType.name}/mapping.txt"
+                            include "../apk/${output.outputFile.name}"
+                        }
+                        into DIST_DIRECTORY
+                        eachFile { file ->
+                            file.path = file.name // so we have a "flat" copy
+                        }
+                        includeEmptyDirs = false
+                    }
+                    tasks[assembleTaskName].finalizedBy = [copyAPKTask]
+                }
+            }
+        }
+    }//*/
 }
 
 dependencies {
@@ -38,3 +83,10 @@ dependencies {
     compile 'com.android.support:appcompat-v7:26.+'
     testCompile 'junit:junit:4.12'
 }
+
+/*
+task cleanExtra(type: Delete) {
+    delete apkPath.concat(apkName)
+}
+clean.dependsOn(cleanExtra)
+//*/
