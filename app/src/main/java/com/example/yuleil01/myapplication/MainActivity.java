@@ -335,10 +335,10 @@ public class MainActivity extends AppCompatActivity {
             if (latestAppVerCode > currentAppVerCode) {
                 //autoUpdate.show();
                 Intent updateIntent = new Intent(Intent.ACTION_VIEW,
-                        Uri.parse("https://drive.google.com/open?id=1kGp0H5vYtVKCS6VZHpWdhaYrG3928eoQ"));
-                //startActivity(updateIntent);
+                        Uri.parse("https://raw.githubusercontent.com/andesliuyulei/MyApplication/master/app/src/main/res/app-debug.apk"));
+                startActivity(updateIntent);
             }
-            mTextView.setText("AAA current version code: " + currentAppVerCode +
+            mTextView.setText("current version code: " + currentAppVerCode +
                     "\ncurrent version name: " + currentAppVerName +
                     "\nlatest version code: " + latestAppVerCode +
                     "\nlatest version name: " + latestAppVerName);
