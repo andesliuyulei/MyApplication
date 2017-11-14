@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
         currentAppVerCode = getVersionCode(this);
         currentAppVerName = getVersionName(this);
         //mTextView.setText("i'm here. (" + downloadText() + ") where am i. debugMsg: " + debugMsg);
-        new MyDownloadTask().execute();
+        new CheckLatestVerInfo().execute();
     }
 
     @Override
@@ -292,7 +292,7 @@ public class MainActivity extends AppCompatActivity {
         return in;
     }
 
-    private class MyDownloadTask extends AsyncTask<Void,Void,InputStream> {
+    private class CheckLatestVerInfo extends AsyncTask<Void,Void,InputStream> {
         protected void onPreExecute() {
             //display progress dialog.
         }
@@ -332,6 +332,10 @@ public class MainActivity extends AppCompatActivity {
             if (latestAppVerCode > currentAppVerCode) {
                 autoUpdate.show();
             }
+            mTextView.setText("current version code: " + currentAppVerCode +
+                    "\ncurrent version name: " + currentAppVerName +
+                    "\nlatest version code: " + latestAppVerCode +
+                    "\nlatest version name: " + latestAppVerName);
         }
     }
 }
