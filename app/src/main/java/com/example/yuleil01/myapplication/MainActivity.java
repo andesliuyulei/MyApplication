@@ -13,11 +13,14 @@ import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
+import android.nfc.tech.IsoDep;
 import android.nfc.tech.Ndef;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -72,8 +75,18 @@ public class MainActivity extends AppCompatActivity {
         //handleIntent(getIntent());
         currentAppVerCode = getVersionCode(this);
         currentAppVerName = getVersionName(this);
-        //mTextView.setText("i'm here. (" + downloadText() + ") where am i. debugMsg: " + debugMsg);
-        new CheckLatestVerInfo().execute();
+        //new CheckLatestVerInfo().execute();
+
+        AutoCompleteTextView abc = (AutoCompleteTextView) findViewById(R.id.autoCompleteTextView);
+        final String[] ezlinkcards = new String[] {
+                "Abcdefs",
+                "1009622007955551",
+                "1009622008118657",
+                "8009150000708910"
+        };
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, ezlinkcards);
+        abc.setAdapter(adapter);
     }
 
     @Override
@@ -85,6 +98,34 @@ public class MainActivity extends AppCompatActivity {
          * an IllegalStateException is thrown.
          */
         setupForegroundDispatch(this, mNfcAdapter);
+    }
+
+    /**
+     * @param activity The corresponding {@link Activity} requesting the foreground dispatch.
+     * @param adapter The {@link NfcAdapter} used for the foreground dispatch.
+     */
+    public static void setupForegroundDispatch(final Activity activity, NfcAdapter adapter) {
+        final Intent intent = new Intent(activity.getApplicationContext(), activity.getClass());
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        final PendingIntent pendingIntent = PendingIntent.getActivity(activity.getApplicationContext(), 0, intent, 0);
+
+        IntentFilter[] filters = new IntentFilter[1];
+        String[][] techList = new String[][]{};
+
+        // Notice that this is the same filter as in our manifest.
+        filters[0] = new IntentFilter();
+        filters[0].addAction(NfcAdapter.ACTION_NDEF_DISCOVERED);
+        filters[0].addAction(NfcAdapter.ACTION_TECH_DISCOVERED);
+        filters[0].addAction(NfcAdapter.ACTION_TAG_DISCOVERED);
+        filters[0].addCategory(Intent.CATEGORY_DEFAULT);
+        /*/try {
+            filters[0].addDataType(MIME_TEXT_PLAIN);
+        } catch (IntentFilter.MalformedMimeTypeException e) {
+            throw new RuntimeException("Check your mime type.");
+        }//*/
+
+        adapter.enableForegroundDispatch(activity, pendingIntent, filters, techList);
     }
 
     @Override
@@ -106,10 +147,10 @@ public class MainActivity extends AppCompatActivity {
          *
          * In our case this method gets called, when the user attaches a Tag to the device.
          */
-        //handleIntent(intent);
+        handleIntent(intent);
 
-        mTextView.setText("i found u.");
-        mTextView.refreshDrawableState();
+        //Toast.makeText(this, "yes detected...", Toast.LENGTH_LONG).show();
+        //mTextView.setText("i found u.");
     }
 
     private void handleIntent(Intent intent) {
@@ -138,12 +179,19 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 }
             }
+            mTextView.setText("i am here.");
         } else {
-            mTextView.setText(
-                    "action: " + action.toString() +
-                    "\n: " + NfcAdapter.ACTION_NDEF_DISCOVERED.toString() +
-                    "\n: " + NfcAdapter.ACTION_TECH_DISCOVERED.toString()
-            );
+            //posb everyday card: android.nfc.tech.IsoDep android.nfc.tech.NfcB
+            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+            IsoDep isoDep = IsoDep.get(tag);
+            try {
+                isoDep.connect();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            isoDep.getHistoricalBytes();
+            mTextView.setText("yes: " + isoDep.getHiLayerResponse().toString());
         }
     }
     /**
@@ -212,32 +260,6 @@ public class MainActivity extends AppCompatActivity {
                 mTextView.setText("Read content: " + result);
             }
         }
-    }
-
-    /**
-     * @param activity The corresponding {@link Activity} requesting the foreground dispatch.
-     * @param adapter The {@link NfcAdapter} used for the foreground dispatch.
-     */
-    public static void setupForegroundDispatch(final Activity activity, NfcAdapter adapter) {
-        final Intent intent = new Intent(activity.getApplicationContext(), activity.getClass());
-        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-        final PendingIntent pendingIntent = PendingIntent.getActivity(activity.getApplicationContext(), 0, intent, 0);
-
-        IntentFilter[] filters = new IntentFilter[1];
-        String[][] techList = new String[][]{};
-
-        // Notice that this is the same filter as in our manifest.
-        filters[0] = new IntentFilter();
-        filters[0].addAction(NfcAdapter.ACTION_NDEF_DISCOVERED);
-        filters[0].addCategory(Intent.CATEGORY_DEFAULT);
-        try {
-            filters[0].addDataType(MIME_TEXT_PLAIN);
-        } catch (IntentFilter.MalformedMimeTypeException e) {
-            throw new RuntimeException("Check your mime type.");
-        }
-
-        adapter.enableForegroundDispatch(activity, pendingIntent, filters, techList);
     }
 
     /**
